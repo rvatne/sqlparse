@@ -333,14 +333,17 @@ def group_aliased(tlist):
 @recurse(sql.Function)
 def group_functions(tlist):
     has_create = False
-    has_table = False
     for tmp_token in tlist.tokens:
-        if tmp_token.value == 'CREATE':
+        if tmp_token.ttype == T.Whitespace: continue                  # quick skip since there often is lots of whitespace
+        if not imt(tmp_token, t=(T.Keyword, T.Keyword.DDL, T.Name)):  # test only these
+            continue  
+        unified_value = tmp_token.value.upper()
+        if unified_value == 'CREATE':                  # T.Keyword.DDL
             has_create = True
-        if tmp_token.value == 'TABLE':
-            has_table = True
-    if has_create and has_table:
-        return
+        elif has_create and unified_value == 'TABLE':  # T.Keyword
+            return                                     # -- create table DDL
+        elif unified_value in ('VARCHAR2', 'TIMESTAMP'):
+            return
 
     tidx, token = tlist.token_next_by(t=T.Name)
     while token:
